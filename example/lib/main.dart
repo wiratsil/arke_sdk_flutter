@@ -32,6 +32,15 @@ class _MyAppState extends State<MyApp> {
     'blue': false,
   };
 
+  StreamSubscription<VasEvent>? _vasSubscription;
+  String _vasStatus = 'Not Bound';
+
+  @override
+  void dispose() {
+    _vasSubscription?.cancel();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -54,6 +63,17 @@ class _MyAppState extends State<MyApp> {
     setState(() => _platformVersion = platformVersion);
 
     if (_isConnected) _getTerminalInfo();
+
+    _vasSubscription?.cancel();
+    _vasSubscription = _arke.vas.vasEvents.listen((event) {
+      if (!mounted) return;
+      setState(() {
+        _vasStatus = 'Event: ${event.type}\nData: ${event.data}';
+      });
+    }, onError: (e) {
+      if (!mounted) return;
+      setState(() => _vasStatus = 'Event Error: $e');
+    });
   }
 
   Future<void> _getTerminalInfo() async {
@@ -217,6 +237,76 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  // ==================== VAS ====================
+
+  Future<void> _vasBind() async {
+    setState(() => _vasStatus = 'Binding to VAS...');
+    try {
+      await _arke.vas.bindService();
+    } catch (e) {
+      setState(() => _vasStatus = 'VAS Bind Error: $e');
+    }
+  }
+
+  Future<void> _vasSignIn() async {
+    setState(() => _vasStatus = 'SignIn to VAS...');
+    try {
+      await _arke.vas.signIn();
+    } catch (e) {
+      setState(() => _vasStatus = 'VAS SignIn Error: $e');
+    }
+  }
+
+  Future<void> _vasSale() async {
+    setState(() => _vasStatus = 'Starting Sale to VAS...');
+    try {
+      await _arke.vas.sale(VasRequestBody(amount: 100.0));
+    } catch (e) {
+      setState(() => _vasStatus = 'VAS Sale Error: $e');
+    }
+  }
+
+  Widget _buildVasControls() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('💳 VAS (Value Added Services)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            const Divider(),
+            Text('Status: $_vasStatus', style: const TextStyle(fontSize: 12, color: Colors.indigo)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _isConnected ? _vasBind : null,
+                    child: const Text('Bind Service'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: _isConnected ? _vasSignIn : null,
+                    child: const Text('Sign In'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+              onPressed: _isConnected ? _vasSale : null,
+              icon: const Icon(Icons.payment),
+              label: const Text('Test Sale (100.0)'),
+              style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(40)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ==================== Build UI ====================
 
   @override
@@ -258,6 +348,8 @@ class _MyAppState extends State<MyApp> {
               _buildNfcControls(),
               const SizedBox(height: 12),
               _buildMagReaderControls(),
+              const SizedBox(height: 12),
+              _buildVasControls(),
               const SizedBox(height: 16),
               _buildStatusBar(),
             ],

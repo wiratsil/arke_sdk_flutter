@@ -27,7 +27,7 @@ apply plugin: "com.android.library"
 android {
     namespace = "com.arke.sdk.arke_sdk_flutter"
 
-    compileSdk = 36
+    compileSdk = 34
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -36,6 +36,10 @@ android {
 
     defaultConfig {
         minSdk = 19
+    }
+
+    buildFeatures {
+        aidl true
     }
 
     repositories {

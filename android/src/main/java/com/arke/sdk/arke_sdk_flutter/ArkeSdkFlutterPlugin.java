@@ -11,10 +11,15 @@ import io.flutter.plugin.common.MethodChannel.Result;
 
 import java.util.List;
 
+import io.flutter.plugin.common.EventChannel;
+import com.arke.sdk.arke_sdk_flutter.vas.VasManager;
+
 /** ArkeSdkFlutterPlugin */
 public class ArkeSdkFlutterPlugin implements FlutterPlugin, MethodCallHandler {
   private MethodChannel channel;
   private Context context;
+  private VasManager vasManager;
+  private EventChannel vasEventChannel;
 
   @Override
   public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -22,6 +27,10 @@ public class ArkeSdkFlutterPlugin implements FlutterPlugin, MethodCallHandler {
     com.arke.sdk.ArkeSdkDemoApplication.init(context);
     channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "arke_sdk_flutter");
     channel.setMethodCallHandler(this);
+
+    vasManager = new VasManager(context);
+    vasEventChannel = new EventChannel(flutterPluginBinding.getBinaryMessenger(), "arke_sdk_flutter/vas_events");
+    vasEventChannel.setStreamHandler(vasManager);
   }
 
   private boolean checkSdkConnected(Result result) {
@@ -162,6 +171,51 @@ public class ArkeSdkFlutterPlugin implements FlutterPlugin, MethodCallHandler {
 
       case "serialClose":
         handleSerialClose(call, result);
+        break;
+
+      // ==================== VAS ====================
+
+      case "vasBindService":
+        String action = call.argument("action");
+        String pkg = call.argument("packageName");
+        vasManager.bindService(action, pkg, result);
+        break;
+
+      case "vasUnbindService":
+        vasManager.unbindService();
+        result.success(null);
+        break;
+
+      case "vasSignIn":
+        vasManager.signIn(result);
+        break;
+
+      case "vasSale":
+        vasManager.sale((String) call.argument("payloadBody"), result);
+        break;
+
+      case "vasVoided":
+        vasManager.voided((String) call.argument("payloadBody"), result);
+        break;
+
+      case "vasSettle":
+        vasManager.settle(result);
+        break;
+
+      case "vasOrderNumberQuery":
+        vasManager.orderNumberQuery((String) call.argument("payloadBody"), result);
+        break;
+
+      case "vasPrintTransactionSummary":
+        vasManager.printTransactionSummary(result);
+        break;
+
+      case "vasPrintTransactionDetail":
+        vasManager.printTransactionDetail(result);
+        break;
+
+      case "vasTerminalKeyManagement":
+        vasManager.terminalKeyManagement(result);
         break;
 
       default:
@@ -640,5 +694,7 @@ public class ArkeSdkFlutterPlugin implements FlutterPlugin, MethodCallHandler {
   @Override
   public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
     channel.setMethodCallHandler(null);
+    if (vasManager != null) vasManager.unbindService();
+    if (vasEventChannel != null) vasEventChannel.setStreamHandler(null);
   }
 }

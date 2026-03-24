@@ -1,8 +1,17 @@
 
 import 'dart:typed_data';
+import 'package:flutter/services.dart';
 import 'arke_sdk_flutter_platform_interface.dart';
+import 'src/vas/arke_vas.dart';
+
+export 'src/vas/arke_vas.dart';
 
 class ArkeSdkFlutter {
+  static final ArkeVas _vas = ArkeVas(const MethodChannel('arke_sdk_flutter'));
+
+  /// Access to Value Added Services (VAS) for Arke Smart POS Payment
+  ArkeVas get vas => _vas;
+
   // ==================== System ====================
 
   Future<String?> getPlatformVersion() {
