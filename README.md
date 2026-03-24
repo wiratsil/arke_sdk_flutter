@@ -336,6 +336,54 @@ await arke.serialClose();
 
 ---
 
+---
+
+### VAS (Value Added Services / Payment)
+
+The Arke SDK allows you to directly interact with the device's main payment application using the VAS API.
+
+#### Bind to VAS Service
+You must bind to the native service before calling any transaction methods.
+
+```dart
+// Connects to the Arke payment service ('com.arke')
+await arke.vas.bindService();
+```
+
+#### Listen to Transaction Events
+All transaction processes (like Sale, Settle, etc.) return their results asynchronously through a stream.
+
+```dart
+arke.vas.vasEvents.listen((event) {
+  print('Event Type: ${event.type}'); // "onStart", "onNext", "onComplete"
+  print('Payload Data: ${event.data}'); // JSON string from the payment app
+});
+```
+
+#### `signIn()`
+Initiates a handshake with the payment host (Bank/Server).
+
+```dart
+await arke.vas.signIn();
+```
+
+#### `sale(VasRequestBody request)`
+Initiates a payment sale transaction for a specific amount. The payment app will handle the card reading PIN prompt.
+
+```dart
+final request = VasRequestBody(amount: 100.0);
+await arke.vas.sale(request);
+```
+
+#### `settle()`
+Performs the end-of-day settlement batch process, concluding all transactions made that day.
+
+```dart
+await arke.vas.settle();
+```
+
+---
+
 ## Error Handling
 
 All methods throw `PlatformException` on failure. Common error codes:
@@ -383,3 +431,4 @@ try {
 | **NFC** | `startNfcScan` | ✅ |
 | **Mag Card** | `startMagReader`, `stopMagReader` | ✅ |
 | **Serial Port** | `serialOpen`, `serialInit`, `serialWrite`, `serialRead`, `serialClose` | ✅ |
+| **VAS** | `vas.bindService`, `vas.signIn`, `vas.sale`, `vas.settle`, `vas.vasEvents` | ✅ |
