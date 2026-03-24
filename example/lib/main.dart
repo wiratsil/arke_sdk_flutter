@@ -34,9 +34,14 @@ class _MyAppState extends State<MyApp> {
 
   StreamSubscription<VasEvent>? _vasSubscription;
   String _vasStatus = 'Not Bound';
+  
+  final _vasActionController = TextEditingController(text: 'com.arke.vas.service');
+  final _vasPackageController = TextEditingController(text: 'com.arke');
 
   @override
   void dispose() {
+    _vasActionController.dispose();
+    _vasPackageController.dispose();
     _vasSubscription?.cancel();
     super.dispose();
   }
@@ -242,7 +247,10 @@ class _MyAppState extends State<MyApp> {
   Future<void> _vasBind() async {
     setState(() => _vasStatus = 'Binding to VAS...');
     try {
-      await _arke.vas.bindService();
+      await _arke.vas.bindService(
+        action: _vasActionController.text.trim(),
+        packageName: _vasPackageController.text.trim(),
+      );
     } catch (e) {
       setState(() => _vasStatus = 'VAS Bind Error: $e');
     }
@@ -266,6 +274,32 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  Future<void> _vasSettle() async {
+    setState(() => _vasStatus = 'Starting Settle via VAS...');
+    try {
+      await _arke.vas.settle();
+    } catch (e) {
+      setState(() => _vasStatus = 'VAS Settle Error: $e');
+    }
+  }
+
+  Future<void> _scanServices() async {
+    setState(() => _vasStatus = 'Scanning com.arke.vas package...');
+    String result = await _arke.vas.scanVasServices();
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("VAS Services Found"),
+        content: SingleChildScrollView(child: Text(result)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK"))
+        ],
+      ),
+    );
+    setState(() => _vasStatus = 'Scan Complete');
+  }
+
   Widget _buildVasControls() {
     return Card(
       child: Padding(
@@ -275,6 +309,41 @@ class _MyAppState extends State<MyApp> {
           children: [
             const Text('💳 VAS (Value Added Services)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const Divider(),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _vasActionController,
+                    decoration: const InputDecoration(labelText: 'Action (e.g. com.arke.vas)', isDense: true),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _vasPackageController,
+                    decoration: const InputDecoration(labelText: 'Package (e.g. com.arke.vas)', isDense: true),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: [
+                {'action': 'com.arke.vas.service', 'package': 'com.arke'},
+                {'action': 'com.arke.vas', 'package': 'com.arke'},
+                {'action': 'com.arke.vas', 'package': 'com.arke.sdk.demo'},
+                {'action': 'com.arke.sdk.vas', 'package': 'com.arke.sdk.demo'},
+              ].map((val) => ActionChip(
+                    label: Text('${val['action']}  →  ${val['package']}', style: const TextStyle(fontSize: 9)),
+                    onPressed: () {
+                      _vasActionController.text = val['action']!;
+                      _vasPackageController.text = val['package']!;
+                    },
+                  )).toList(),
+            ),
+            const SizedBox(height: 12),
             Text('Status: $_vasStatus', style: const TextStyle(fontSize: 12, color: Colors.indigo)),
             const SizedBox(height: 8),
             Row(
@@ -295,11 +364,38 @@ class _MyAppState extends State<MyApp> {
               ],
             ),
             const SizedBox(height: 8),
-            ElevatedButton.icon(
-              onPressed: _isConnected ? _vasSale : null,
-              icon: const Icon(Icons.payment),
-              label: const Text('Test Sale (100.0)'),
-              style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(40)),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _isConnected ? _vasSale : null,
+                    icon: const Icon(Icons.payment),
+                    label: const Text('Sale (100)'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _isConnected ? _vasSettle : null,
+                    icon: const Icon(Icons.save_alt),
+                    label: const Text('Settle'),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _scanServices,
+                    icon: const Icon(Icons.search),
+                    label: const Text('Scan Services (Debug)'),
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, foregroundColor: Colors.black),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

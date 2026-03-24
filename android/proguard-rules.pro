@@ -1,0 +1,2 @@
+-dontwarn com.arke.vas.**
+-keep class com.arke.vas.** { *; }

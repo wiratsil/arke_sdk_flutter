@@ -213,11 +213,12 @@ public class ArkeSdkFlutterPlugin implements FlutterPlugin, MethodCallHandler {
       case "vasPrintTransactionDetail":
         vasManager.printTransactionDetail(result);
         break;
-
       case "vasTerminalKeyManagement":
         vasManager.terminalKeyManagement(result);
         break;
-
+      case "vasScanServices":
+        vasManager.scanAvailableVasServices(result);
+        break;
       default:
         result.notImplemented();
         break;

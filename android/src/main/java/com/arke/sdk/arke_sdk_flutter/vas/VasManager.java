@@ -35,12 +35,44 @@ public class VasManager implements EventChannel.StreamHandler {
             return;
         }
         
-        Intent intent = new Intent(action != null ? action : "com.arke.sdk.vas");
+        String finalAction = action != null && !action.isEmpty() ? action : "com.arke.vas.service";
+        
         if (packageName != null && !packageName.isEmpty()) {
-            intent.setPackage(packageName);
+            performBind(finalAction, packageName, result);
         } else {
-             // Fallback to default demo package if not provided
-             intent.setPackage("com.arke.sdk");
+            // Try common package names - com.arke is the correct one per reference demo
+            if (tryBind(finalAction, "com.arke")) {
+                result.success("Binding started (com.arke)");
+            } else if (tryBind(finalAction, "com.arke.sdk.demo")) {
+                result.success("Binding started (com.arke.sdk.demo)");
+            } else if (tryBind(finalAction, "com.arke.vas")) {
+                result.success("Binding started (com.arke.vas)");
+            } else {
+                result.error("BIND_FAILED", "Could not bind to Arke VAS service with common packages", null);
+            }
+        }
+    }
+
+    private boolean tryBind(String action, String packageName) {
+        Intent intent = new Intent();
+        if (action != null && action.contains("/")) {
+            String[] parts = action.split("/");
+            intent.setComponent(new android.content.ComponentName(parts[0], parts[1]));
+        } else {
+            intent.setAction(action);
+            intent.setPackage(packageName);
+        }
+        return context.bindService(intent, connection, Context.BIND_AUTO_CREATE);
+    }
+
+    private void performBind(String action, String packageName, MethodChannel.Result result) {
+        Intent intent = new Intent();
+        if (action != null && action.contains("/")) {
+            String[] parts = action.split("/");
+            intent.setComponent(new android.content.ComponentName(parts[0], parts[1]));
+        } else {
+            intent.setAction(action);
+            intent.setPackage(packageName);
         }
         
         try {
@@ -48,10 +80,41 @@ public class VasManager implements EventChannel.StreamHandler {
             if (bound) {
                 result.success("Binding started");
             } else {
-                result.error("BIND_FAILED", "Could not bind to Arke VAS service", null);
+                result.error("BIND_FAILED", "Could not bind to " + (action.contains("/") ? action : packageName), null);
             }
         } catch (Exception e) {
             result.error("BIND_ERROR", e.getMessage(), null);
+        }
+    }
+
+    public void scanAvailableVasServices(MethodChannel.Result result) {
+        try {
+            android.content.pm.PackageManager pm = context.getPackageManager();
+            StringBuilder sb = new StringBuilder();
+            
+            // Scan multiple candidate packages
+            String[] candidates = {"com.arke", "com.arke.vas", "com.arke.sdk.demo"};
+            for (String pkg : candidates) {
+                try {
+                    android.content.pm.PackageInfo pi = pm.getPackageInfo(pkg, android.content.pm.PackageManager.GET_SERVICES);
+                    sb.append("=== Package: ").append(pkg).append(" ===").append("\n");
+                    if (pi.services != null) {
+                        for (android.content.pm.ServiceInfo si : pi.services) {
+                            sb.append("  Class: ").append(si.name)
+                              .append(" | Exported: ").append(si.exported).append("\n");
+                        }
+                    } else {
+                        sb.append("  No services declared\n");
+                    }
+                } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+                    sb.append("=== Package: ").append(pkg).append(" === NOT INSTALLED\n");
+                }
+            }
+            
+            if (sb.length() == 0) sb.append("No VAS packages found");
+            result.success(sb.toString().trim());
+        } catch (Exception e) {
+            result.error("SCAN_ERROR", "Scanner Failed: " + e.getMessage(), null);
         }
     }
 
@@ -117,7 +180,16 @@ public class VasManager implements EventChannel.StreamHandler {
 
     public void sale(String payloadBody, MethodChannel.Result result) {
         if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
-        try { vasService.sale(new VASPayload(payloadBody != null ? payloadBody : "{}"), vasListener); result.success(null); }
+        try {
+            // Ensure we have a valid JSON body. If payloadBody is empty or just "{}", 
+            // construct a proper RequestBodyData JSON
+            String body = payloadBody;
+            if (body == null || body.isEmpty() || body.equals("{}")) {
+                body = "{\"amount\":0.0}";
+            }
+            vasService.sale(new VASPayload(body), vasListener); 
+            result.success(null); 
+        }
         catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
     }
 

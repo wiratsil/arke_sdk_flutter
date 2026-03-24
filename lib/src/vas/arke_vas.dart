@@ -71,4 +71,14 @@ class ArkeVas {
   Future<void> terminalKeyManagement() async {
     await _channel.invokeMethod('vasTerminalKeyManagement');
   }
+
+  /// Scan available services in com.arke.vas package for debugging
+  Future<String> scanVasServices() async {
+    try {
+      final String result = await _channel.invokeMethod('vasScanServices');
+      return result;
+    } catch (e) {
+      return "Error scanning: $e";
+    }
+  }
 }
