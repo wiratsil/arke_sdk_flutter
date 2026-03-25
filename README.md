@@ -382,6 +382,36 @@ Performs the end-of-day settlement batch process, concluding all transactions ma
 await arke.vas.settle();
 ```
 
+#### Advanced Transactions
+The plugin supports all 35 extended transaction features via the core `com.arke` VAS service, including:
+
+**Core Transactions:**
+- `balance()`: Query card balance
+- `refund(VasRequestBody request)`: Refund a successful transaction
+- `offline(VasRequestBody request)`: Perform an offline transaction
+- `offlineSettlement(VasRequestBody request)`: Settle offline records
+- `ecashBalanceQuery()`: Query e-Cash balance
+
+**Pre-Authorization:**
+- `preAuthorization(VasRequestBody request)`: Reserve card funds
+- `preAuthorizationVoid(VasRequestBody request)`: Void a reservation
+- `preAuthorizationCompletionRequest(VasRequestBody request)`: Finalize authorization
+- `preAuthorizationCompletionAdvice(VasRequestBody request)`
+- `preAuthorizationCompletionVoid(VasRequestBody request)`
+
+**Adjustments:**
+- `settlementAdjustment(VasRequestBody request)`: Adjust settlement details
+- `adjustTips(VasRequestBody request)`: Adjust tips on a previous order
+
+*Example Usage:*
+```dart
+// Check Balance
+await arke.vas.balance();
+
+// Refund 100 THB
+await arke.vas.refund(VasRequestBody(amount: 100.0));
+```
+
 ---
 
 ## Error Handling
@@ -431,4 +461,5 @@ try {
 | **NFC** | `startNfcScan` | ✅ |
 | **Mag Card** | `startMagReader`, `stopMagReader` | ✅ |
 | **Serial Port** | `serialOpen`, `serialInit`, `serialWrite`, `serialRead`, `serialClose` | ✅ |
-| **VAS** | `vas.bindService`, `vas.signIn`, `vas.sale`, `vas.settle`, `vas.vasEvents` | ✅ |
+| **VAS Core** | `bindService`, `signIn`, `sale`, `settle`, `voided`, `vasEvents` | ✅ |
+| **VAS Advanced** | `refund`, `balance`, `preAuthorization`, `adjustTips`, `offline`, etc. | ✅ |

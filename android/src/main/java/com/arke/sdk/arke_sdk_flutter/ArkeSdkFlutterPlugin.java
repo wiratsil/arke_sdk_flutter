@@ -219,6 +219,49 @@ public class ArkeSdkFlutterPlugin implements FlutterPlugin, MethodCallHandler {
       case "vasScanServices":
         vasManager.scanAvailableVasServices(result);
         break;
+
+      // ==================== PHASE 2: Core Transactions ====================
+      case "vasRefund":
+        vasManager.refund((String) call.argument("payloadBody"), result);
+        break;
+      case "vasBalance":
+        vasManager.balance(result);
+        break;
+      case "vasEcashBalanceQuery":
+        vasManager.ecashBalanceQuery(result);
+        break;
+      case "vasOffline":
+        vasManager.offline((String) call.argument("payloadBody"), result);
+        break;
+      case "vasOfflineSettlement":
+        vasManager.offlineSettlement((String) call.argument("payloadBody"), result);
+        break;
+
+      // ==================== PHASE 2: Pre-Authorization ====================
+      case "vasPreAuthorization":
+        vasManager.preAuthorization((String) call.argument("payloadBody"), result);
+        break;
+      case "vasPreAuthorizationVoid":
+        vasManager.preAuthorizationVoid((String) call.argument("payloadBody"), result);
+        break;
+      case "vasPreAuthorizationCompletionRequest":
+        vasManager.preAuthorizationCompletionRequest((String) call.argument("payloadBody"), result);
+        break;
+      case "vasPreAuthorizationCompletionAdvice":
+        vasManager.preAuthorizationCompletionAdvice((String) call.argument("payloadBody"), result);
+        break;
+      case "vasPreAuthorizationCompletionVoid":
+        vasManager.preAuthorizationCompletionVoid((String) call.argument("payloadBody"), result);
+        break;
+
+      // ==================== PHASE 2: Adjustments ====================
+      case "vasSettlementAdjustment":
+        vasManager.settlementAdjustment((String) call.argument("payloadBody"), result);
+        break;
+      case "vasAdjustTips":
+        vasManager.adjustTips((String) call.argument("payloadBody"), result);
+        break;
+
       default:
         result.notImplemented();
         break;

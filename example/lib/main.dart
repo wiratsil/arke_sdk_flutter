@@ -35,13 +35,11 @@ class _MyAppState extends State<MyApp> {
   StreamSubscription<VasEvent>? _vasSubscription;
   String _vasStatus = 'Not Bound';
   
-  final _vasActionController = TextEditingController(text: 'com.arke.vas.service');
-  final _vasPackageController = TextEditingController(text: 'com.arke');
+  final _vasAmountController = TextEditingController(text: '100.0');
 
   @override
   void dispose() {
-    _vasActionController.dispose();
-    _vasPackageController.dispose();
+    _vasAmountController.dispose();
     _vasSubscription?.cancel();
     super.dispose();
   }
@@ -247,10 +245,7 @@ class _MyAppState extends State<MyApp> {
   Future<void> _vasBind() async {
     setState(() => _vasStatus = 'Binding to VAS...');
     try {
-      await _arke.vas.bindService(
-        action: _vasActionController.text.trim(),
-        packageName: _vasPackageController.text.trim(),
-      );
+      await _arke.vas.bindService();
     } catch (e) {
       setState(() => _vasStatus = 'VAS Bind Error: $e');
     }
@@ -268,7 +263,8 @@ class _MyAppState extends State<MyApp> {
   Future<void> _vasSale() async {
     setState(() => _vasStatus = 'Starting Sale to VAS...');
     try {
-      await _arke.vas.sale(VasRequestBody(amount: 100.0));
+      final amount = double.tryParse(_vasAmountController.text) ?? 0.0;
+      await _arke.vas.sale(VasRequestBody(amount: amount));
     } catch (e) {
       setState(() => _vasStatus = 'VAS Sale Error: $e');
     }
@@ -280,6 +276,45 @@ class _MyAppState extends State<MyApp> {
       await _arke.vas.settle();
     } catch (e) {
       setState(() => _vasStatus = 'VAS Settle Error: $e');
+    }
+  }
+
+  Future<void> _vasBalance() async {
+    setState(() => _vasStatus = 'Checking Balance via VAS...');
+    try {
+      await _arke.vas.balance();
+    } catch (e) {
+      setState(() => _vasStatus = 'VAS Balance Error: $e');
+    }
+  }
+
+  Future<void> _vasRefund() async {
+    setState(() => _vasStatus = 'Refunding via VAS...');
+    try {
+      final amount = double.tryParse(_vasAmountController.text) ?? 0.0;
+      await _arke.vas.refund(VasRequestBody(amount: amount));
+    } catch (e) {
+      setState(() => _vasStatus = 'VAS Refund Error: $e');
+    }
+  }
+
+  Future<void> _vasAdjustTips() async {
+    setState(() => _vasStatus = 'Adjusting Tips via VAS...');
+    try {
+      final amount = double.tryParse(_vasAmountController.text) ?? 0.0;
+      await _arke.vas.adjustTips(VasRequestBody(amount: amount));
+    } catch (e) {
+      setState(() => _vasStatus = 'VAS Adjust Tips Error: $e');
+    }
+  }
+
+  Future<void> _vasSettlementAdjustment() async {
+    setState(() => _vasStatus = 'Settlement Adjustment via VAS...');
+    try {
+      final amount = double.tryParse(_vasAmountController.text) ?? 0.0;
+      await _arke.vas.settlementAdjustment(VasRequestBody(amount: amount));
+    } catch (e) {
+      setState(() => _vasStatus = 'VAS Settlement Adjustment Error: $e');
     }
   }
 
@@ -309,40 +344,6 @@ class _MyAppState extends State<MyApp> {
           children: [
             const Text('💳 VAS (Value Added Services)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const Divider(),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _vasActionController,
-                    decoration: const InputDecoration(labelText: 'Action (e.g. com.arke.vas)', isDense: true),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: TextField(
-                    controller: _vasPackageController,
-                    decoration: const InputDecoration(labelText: 'Package (e.g. com.arke.vas)', isDense: true),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 4,
-              runSpacing: 4,
-              children: [
-                {'action': 'com.arke.vas.service', 'package': 'com.arke'},
-                {'action': 'com.arke.vas', 'package': 'com.arke'},
-                {'action': 'com.arke.vas', 'package': 'com.arke.sdk.demo'},
-                {'action': 'com.arke.sdk.vas', 'package': 'com.arke.sdk.demo'},
-              ].map((val) => ActionChip(
-                    label: Text('${val['action']}  →  ${val['package']}', style: const TextStyle(fontSize: 9)),
-                    onPressed: () {
-                      _vasActionController.text = val['action']!;
-                      _vasPackageController.text = val['package']!;
-                    },
-                  )).toList(),
-            ),
             const SizedBox(height: 12),
             Text('Status: $_vasStatus', style: const TextStyle(fontSize: 12, color: Colors.indigo)),
             const SizedBox(height: 8),
@@ -363,6 +364,17 @@ class _MyAppState extends State<MyApp> {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _vasAmountController,
+              decoration: const InputDecoration(
+                labelText: 'Amount (e.g. 100.0)',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.attach_money),
+                isDense: true,
+              ),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            ),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -370,7 +382,47 @@ class _MyAppState extends State<MyApp> {
                   child: ElevatedButton.icon(
                     onPressed: _isConnected ? _vasSale : null,
                     icon: const Icon(Icons.payment),
-                    label: const Text('Sale (100)'),
+                    label: const Text('Sale'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _isConnected ? _vasRefund : null,
+                    icon: const Icon(Icons.assignment_return),
+                    label: const Text('Refund'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _isConnected ? _vasAdjustTips : null,
+                    icon: const Icon(Icons.volunteer_activism),
+                    label: const Text('Adj Tips'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _isConnected ? _vasSettlementAdjustment : null,
+                    icon: const Icon(Icons.edit_document),
+                    label: const Text('Settle Adj'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _isConnected ? _vasBalance : null,
+                    icon: const Icon(Icons.account_balance_wallet),
+                    label: const Text('Balance'),
                   ),
                 ),
                 const SizedBox(width: 8),
