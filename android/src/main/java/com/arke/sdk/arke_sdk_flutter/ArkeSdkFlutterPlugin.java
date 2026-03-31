@@ -216,6 +216,12 @@ public class ArkeSdkFlutterPlugin implements FlutterPlugin, MethodCallHandler {
       case "vasTerminalKeyManagement":
         vasManager.terminalKeyManagement(result);
         break;
+      case "vasGetActionConfig":
+        vasManager.getActionConfig(result);
+        break;
+      case "vasGetTaskConfig":
+        vasManager.getTaskConfig(result);
+        break;
       case "vasScanServices":
         vasManager.scanAvailableVasServices(result);
         break;
@@ -260,6 +266,9 @@ public class ArkeSdkFlutterPlugin implements FlutterPlugin, MethodCallHandler {
         break;
       case "vasAdjustTips":
         vasManager.adjustTips((String) call.argument("payloadBody"), result);
+        break;
+      case "vasDoAction":
+        vasManager.doAction((String) call.argument("payloadBody"), result);
         break;
 
       default:

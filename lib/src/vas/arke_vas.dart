@@ -6,7 +6,8 @@ export 'vas_payload.dart';
 
 class ArkeVas {
   final MethodChannel _channel;
-  final EventChannel _eventChannel = const EventChannel('arke_sdk_flutter/vas_events');
+  final EventChannel _eventChannel =
+      const EventChannel('arke_sdk_flutter/vas_events');
   Stream<VasEvent>? _vasEventStream;
 
   ArkeVas(this._channel);
@@ -39,12 +40,14 @@ class ArkeVas {
 
   /// Sale / Consume
   Future<void> sale(VasRequestBody payload) async {
-    await _channel.invokeMethod('vasSale', {'payloadBody': payload.toJsonString()});
+    await _channel
+        .invokeMethod('vasSale', {'payloadBody': payload.toJsonString()});
   }
 
   /// Void
   Future<void> voided(VasRequestBody payload) async {
-    await _channel.invokeMethod('vasVoided', {'payloadBody': payload.toJsonString()});
+    await _channel
+        .invokeMethod('vasVoided', {'payloadBody': payload.toJsonString()});
   }
 
   /// Settle
@@ -54,7 +57,8 @@ class ArkeVas {
 
   /// Query order
   Future<void> orderNumberQuery(VasRequestBody payload) async {
-    await _channel.invokeMethod('vasOrderNumberQuery', {'payloadBody': payload.toJsonString()});
+    await _channel.invokeMethod(
+        'vasOrderNumberQuery', {'payloadBody': payload.toJsonString()});
   }
 
   /// Print Transaction Summary
@@ -72,6 +76,18 @@ class ArkeVas {
     await _channel.invokeMethod('vasTerminalKeyManagement');
   }
 
+  /// Fetch the action configuration published by the VAS service.
+  Future<String> getActionConfig() async {
+    final String? result = await _channel.invokeMethod('vasGetActionConfig');
+    return result ?? '';
+  }
+
+  /// Fetch the task configuration published by the VAS service.
+  Future<String> getTaskConfig() async {
+    final String? result = await _channel.invokeMethod('vasGetTaskConfig');
+    return result ?? '';
+  }
+
   /// Scan available services in com.arke.vas package for debugging
   Future<String> scanVasServices() async {
     try {
@@ -86,7 +102,8 @@ class ArkeVas {
 
   /// Refund
   Future<void> refund(VasRequestBody payload) async {
-    await _channel.invokeMethod('vasRefund', {'payloadBody': payload.toJsonString()});
+    await _channel
+        .invokeMethod('vasRefund', {'payloadBody': payload.toJsonString()});
   }
 
   /// Balance
@@ -101,50 +118,66 @@ class ArkeVas {
 
   /// Offline Transaction
   Future<void> offline(VasRequestBody payload) async {
-    await _channel.invokeMethod('vasOffline', {'payloadBody': payload.toJsonString()});
+    await _channel
+        .invokeMethod('vasOffline', {'payloadBody': payload.toJsonString()});
   }
 
   /// Offline Settlement
   Future<void> offlineSettlement(VasRequestBody payload) async {
-    await _channel.invokeMethod('vasOfflineSettlement', {'payloadBody': payload.toJsonString()});
+    await _channel.invokeMethod(
+        'vasOfflineSettlement', {'payloadBody': payload.toJsonString()});
   }
 
   // ==================== PHASE 2: Pre-Authorization ====================
 
   /// Pre-Authorization (จองวงเงิน)
   Future<void> preAuthorization(VasRequestBody payload) async {
-    await _channel.invokeMethod('vasPreAuthorization', {'payloadBody': payload.toJsonString()});
+    await _channel.invokeMethod(
+        'vasPreAuthorization', {'payloadBody': payload.toJsonString()});
   }
 
   /// Pre-Authorization Void (ยกเลิกจองวงเงิน)
   Future<void> preAuthorizationVoid(VasRequestBody payload) async {
-    await _channel.invokeMethod('vasPreAuthorizationVoid', {'payloadBody': payload.toJsonString()});
+    await _channel.invokeMethod(
+        'vasPreAuthorizationVoid', {'payloadBody': payload.toJsonString()});
   }
 
   /// Pre-Authorization Completion Request (ยืนยันหักเงินจอง)
   Future<void> preAuthorizationCompletionRequest(VasRequestBody payload) async {
-    await _channel.invokeMethod('vasPreAuthorizationCompletionRequest', {'payloadBody': payload.toJsonString()});
+    await _channel.invokeMethod('vasPreAuthorizationCompletionRequest',
+        {'payloadBody': payload.toJsonString()});
   }
 
   /// Pre-Authorization Completion Advice
   Future<void> preAuthorizationCompletionAdvice(VasRequestBody payload) async {
-    await _channel.invokeMethod('vasPreAuthorizationCompletionAdvice', {'payloadBody': payload.toJsonString()});
+    await _channel.invokeMethod('vasPreAuthorizationCompletionAdvice',
+        {'payloadBody': payload.toJsonString()});
   }
 
   /// Pre-Authorization Completion Void (ยกเลิกการหักเงินจากการจอง)
   Future<void> preAuthorizationCompletionVoid(VasRequestBody payload) async {
-    await _channel.invokeMethod('vasPreAuthorizationCompletionVoid', {'payloadBody': payload.toJsonString()});
+    await _channel.invokeMethod('vasPreAuthorizationCompletionVoid',
+        {'payloadBody': payload.toJsonString()});
   }
 
   // ==================== PHASE 2: Adjustments ====================
 
   /// Settlement Adjustment (ปรับปรุงยอด)
   Future<void> settlementAdjustment(VasRequestBody payload) async {
-    await _channel.invokeMethod('vasSettlementAdjustment', {'payloadBody': payload.toJsonString()});
+    await _channel.invokeMethod(
+        'vasSettlementAdjustment', {'payloadBody': payload.toJsonString()});
   }
 
   /// Adjust Tips (เพิ่มทิป)
   Future<void> adjustTips(VasRequestBody payload) async {
-    await _channel.invokeMethod('vasAdjustTips', {'payloadBody': payload.toJsonString()});
+    await _channel.invokeMethod('vasAdjustTips', {
+      'payloadBody': payload.toAdjustTipsJsonString(),
+    });
+  }
+
+  /// Do Action (Generic)
+  Future<void> doAction(VasRequestBody payload) async {
+    await _channel
+        .invokeMethod('vasDoAction', {'payloadBody': payload.toJsonString()});
   }
 }

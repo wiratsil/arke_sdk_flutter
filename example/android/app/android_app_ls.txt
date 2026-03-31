@@ -1,0 +1,6 @@
+total 8
+drwxr-xr-x 1 Wimutti 197121    0 Mar 26 16:36 ./
+drwxr-xr-x 1 Wimutti 197121    0 Mar 20 10:05 ../
+-rw-r--r-- 1 Wimutti 197121    0 Mar 26 16:36 android_app_ls.txt
+-rw-r--r-- 1 Wimutti 197121 1422 Mar 19 18:51 build.gradle.kts
+drwxr-xr-x 1 Wimutti 197121    0 Mar 20 10:05 src/

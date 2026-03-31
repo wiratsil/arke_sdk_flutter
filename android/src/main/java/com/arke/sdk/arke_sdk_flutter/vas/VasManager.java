@@ -13,6 +13,8 @@ import android.util.Log;
 import com.arke.vas.IVASInterface;
 import com.arke.vas.IVASListener;
 import com.arke.vas.data.VASPayload;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodChannel;
@@ -147,17 +149,22 @@ public class VasManager implements EventChannel.StreamHandler {
     private final IVASListener.Stub vasListener = new IVASListener.Stub() {
         @Override
         public void onStart() throws RemoteException {
+            Log.d(TAG, "VAS Event: onStart");
             sendEvent("onStart", null);
         }
 
         @Override
         public void onNext(VASPayload responseData) throws RemoteException {
-            sendEvent("onNext", responseData != null ? responseData.getBody() : null);
+            String body = responseData != null ? responseData.getBody() : null;
+            Log.d(TAG, "VAS Event: onNext, Body: " + body);
+            sendEvent("onNext", body);
         }
 
         @Override
         public void onComplete(VASPayload responseData) throws RemoteException {
-            sendEvent("onComplete", responseData != null ? responseData.getBody() : null);
+            String body = responseData != null ? responseData.getBody() : null;
+            Log.d(TAG, "VAS Event: onComplete, Body: " + body);
+            sendEvent("onComplete", body);
         }
     };
 
@@ -174,30 +181,52 @@ public class VasManager implements EventChannel.StreamHandler {
 
     public void signIn(MethodChannel.Result result) {
         if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
-        try { vasService.signIn(vasListener); result.success(null); }
+        try { 
+            vasService.signIn(vasListener); 
+            result.success(null); 
+        }
         catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
+    }
+
+    private VASPayload createPayload(String body) {
+        VASPayload payload = new VASPayload(body != null ? body : "{}");
+        // Arke VAS usually expects version in the head
+        payload.setHead("{\"version\":\"V1.2.1\"}");
+        return payload;
     }
 
     public void sale(String payloadBody, MethodChannel.Result result) {
         if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
         try {
+            Log.d(TAG, "VAS Call: sale, Payload: " + payloadBody);
             // Ensure we have a valid JSON body. If payloadBody is empty or just "{}", 
             // construct a proper RequestBodyData JSON
             String body = payloadBody;
             if (body == null || body.isEmpty() || body.equals("{}")) {
                 body = "{\"amount\":0.0}";
             }
-            vasService.sale(new VASPayload(body), vasListener); 
+            vasService.sale(createPayload(body), vasListener); 
             result.success(null); 
         }
-        catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
+        catch (RemoteException e) { 
+            Log.e(TAG, "VAS Call Error: sale", e);
+            result.error("REMOTE_EXCEPTION", e.getMessage(), null); 
+        }
     }
 
     public void voided(String payloadBody, MethodChannel.Result result) {
         if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
-        try { vasService.voided(new VASPayload(payloadBody != null ? payloadBody : "{}"), vasListener); result.success(null); }
-        catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
+        try { 
+            Log.d(TAG, "VAS Call: voided, Payload: " + payloadBody);
+            vasService.voided(createPayload(payloadBody), vasListener); 
+            result.success(null); 
+        }
+        catch (RemoteException e) { 
+            Log.e(TAG, "VAS Call Error: voided", e);
+            result.error("REMOTE_EXCEPTION", e.getMessage(), null); 
+        }
     }
+
 
     public void settle(MethodChannel.Result result) {
         if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
@@ -207,8 +236,15 @@ public class VasManager implements EventChannel.StreamHandler {
 
     public void orderNumberQuery(String payloadBody, MethodChannel.Result result) {
         if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
-        try { vasService.orderNumberQuery(new VASPayload(payloadBody != null ? payloadBody : "{}"), vasListener); result.success(null); }
-        catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
+        try { 
+            Log.d(TAG, "VAS Call: orderNumberQuery, Payload: " + payloadBody);
+            vasService.orderNumberQuery(createPayload(payloadBody), vasListener); 
+            result.success(null); 
+        }
+        catch (RemoteException e) { 
+            Log.e(TAG, "VAS Call Error: orderNumberQuery", e);
+            result.error("REMOTE_EXCEPTION", e.getMessage(), null); 
+        }
     }
 
     public void printTransactionSummary(MethodChannel.Result result) {
@@ -229,11 +265,30 @@ public class VasManager implements EventChannel.StreamHandler {
         catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
     }
 
+    public void getActionConfig(MethodChannel.Result result) {
+        if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
+        try { result.success(vasService.getActionConfig()); }
+        catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
+    }
+
+    public void getTaskConfig(MethodChannel.Result result) {
+        if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
+        try { result.success(vasService.getTaskConfig()); }
+        catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
+    }
+
     // ==================== PHASE 2: Core Transactions ====================
     public void refund(String payloadBody, MethodChannel.Result result) {
         if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
-        try { vasService.refund(new VASPayload(payloadBody != null ? payloadBody : "{}"), vasListener); result.success(null); }
-        catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
+        try { 
+            Log.d(TAG, "VAS Call: refund, Payload: " + payloadBody);
+            vasService.refund(createPayload(payloadBody), vasListener); 
+            result.success(null); 
+        }
+        catch (RemoteException e) { 
+            Log.e(TAG, "VAS Call Error: refund", e);
+            result.error("REMOTE_EXCEPTION", e.getMessage(), null); 
+        }
     }
 
     public void balance(MethodChannel.Result result) {
@@ -250,58 +305,192 @@ public class VasManager implements EventChannel.StreamHandler {
 
     public void offline(String payloadBody, MethodChannel.Result result) {
         if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
-        try { vasService.offline(new VASPayload(payloadBody != null ? payloadBody : "{}"), vasListener); result.success(null); }
+        try { vasService.offline(createPayload(payloadBody), vasListener); result.success(null); }
         catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
     }
 
     public void offlineSettlement(String payloadBody, MethodChannel.Result result) {
         if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
-        try { vasService.offlineSettlement(new VASPayload(payloadBody != null ? payloadBody : "{}"), vasListener); result.success(null); }
+        try { vasService.offlineSettlement(createPayload(payloadBody), vasListener); result.success(null); }
         catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
     }
 
     // ==================== PHASE 2: Pre-Authorization ====================
     public void preAuthorization(String payloadBody, MethodChannel.Result result) {
         if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
-        try { vasService.preAuthorization(new VASPayload(payloadBody != null ? payloadBody : "{}"), vasListener); result.success(null); }
-        catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
+        try { 
+            Log.d(TAG, "VAS Call: preAuthorization, Payload: " + payloadBody);
+            vasService.preAuthorization(createPayload(payloadBody), vasListener); 
+            result.success(null); 
+        }
+        catch (RemoteException e) { 
+            Log.e(TAG, "VAS Call Error: preAuthorization", e);
+            result.error("REMOTE_EXCEPTION", e.getMessage(), null); 
+        }
     }
 
     public void preAuthorizationVoid(String payloadBody, MethodChannel.Result result) {
         if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
-        try { vasService.preAuthorizationVoid(new VASPayload(payloadBody != null ? payloadBody : "{}"), vasListener); result.success(null); }
+        try { vasService.preAuthorizationVoid(createPayload(payloadBody), vasListener); result.success(null); }
         catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
     }
 
     public void preAuthorizationCompletionRequest(String payloadBody, MethodChannel.Result result) {
         if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
-        try { vasService.preAuthorizationCompletionRequest(new VASPayload(payloadBody != null ? payloadBody : "{}"), vasListener); result.success(null); }
+        try { vasService.preAuthorizationCompletionRequest(createPayload(payloadBody), vasListener); result.success(null); }
         catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
     }
 
     public void preAuthorizationCompletionAdvice(String payloadBody, MethodChannel.Result result) {
         if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
-        try { vasService.preAuthorizationCompletionAdvice(new VASPayload(payloadBody != null ? payloadBody : "{}"), vasListener); result.success(null); }
+        try { vasService.preAuthorizationCompletionAdvice(createPayload(payloadBody), vasListener); result.success(null); }
         catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
     }
 
     public void preAuthorizationCompletionVoid(String payloadBody, MethodChannel.Result result) {
         if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
-        try { vasService.preAuthorizationCompletionVoid(new VASPayload(payloadBody != null ? payloadBody : "{}"), vasListener); result.success(null); }
+        try { vasService.preAuthorizationCompletionVoid(createPayload(payloadBody), vasListener); result.success(null); }
         catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
     }
 
     // ==================== PHASE 2: Adjustments ====================
     public void settlementAdjustment(String payloadBody, MethodChannel.Result result) {
         if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
-        try { vasService.settlementAdjustment(new VASPayload(payloadBody != null ? payloadBody : "{}"), vasListener); result.success(null); }
-        catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
+        try { 
+            Log.d(TAG, "VAS Call: settlementAdjustment, Payload: " + payloadBody);
+            vasService.settlementAdjustment(createPayload(payloadBody), vasListener); 
+            result.success(null); 
+        }
+        catch (RemoteException e) { 
+            Log.e(TAG, "VAS Call Error: settlementAdjustment", e);
+            result.error("REMOTE_EXCEPTION", e.getMessage(), null); 
+        }
+    }
+
+    public void doAction(String payloadBody, MethodChannel.Result result) {
+        if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
+        try { 
+            Log.d(TAG, "VAS Call: doAction, Payload: " + payloadBody);
+            vasService.doAction(createPayload(payloadBody), vasListener); 
+            result.success(null); 
+        }
+        catch (RemoteException e) { 
+            Log.e(TAG, "VAS Call Error: doAction", e);
+            result.error("REMOTE_EXCEPTION", e.getMessage(), null); 
+        }
+    }
+
+    private String firstNonEmpty(JSONObject payload, String... keys) {
+        for (String key : keys) {
+            String value = payload.optString(key, null);
+            if (value != null) {
+                value = value.trim();
+                if (!value.isEmpty() && !"null".equalsIgnoreCase(value)) {
+                    return value;
+                }
+            }
+        }
+        return null;
+    }
+
+    private void putIfMissing(JSONObject payload, String key, Object value) throws JSONException {
+        if (value == null || payload.has(key)) {
+            return;
+        }
+        if (value instanceof String && ((String) value).trim().isEmpty()) {
+            return;
+        }
+        payload.put(key, value);
+    }
+
+    private String normalizeAdjustTipsPayload(String payloadBody) throws JSONException {
+        JSONObject payload = new JSONObject(
+            payloadBody != null && !payloadBody.trim().isEmpty() ? payloadBody : "{}"
+        );
+        JSONObject normalized = new JSONObject();
+
+        if (payload.has("amount")) {
+            normalized.put("amount", payload.get("amount"));
+        }
+        if (payload.has("needAppPrinted")) {
+            normalized.put("needAppPrinted", payload.get("needAppPrinted"));
+        }
+        if (payload.has("inputRemarkInfo")) {
+            normalized.put("inputRemarkInfo", payload.get("inputRemarkInfo"));
+        }
+        if (payload.has("orderNumber")) {
+            normalized.put("orderNumber", payload.get("orderNumber"));
+        }
+
+        String voucher = firstNonEmpty(
+            payload,
+            "originalVoucherNumber",
+            "voucherNumber",
+            "voucherNo",
+            "origVoucherNumber",
+            "origVoucherNo"
+        );
+        if (voucher != null) {
+            normalized.put("originalVoucherNumber", voucher);
+        }
+
+        String reference = firstNonEmpty(
+            payload,
+            "originalReferenceNumber",
+            "referenceNumber",
+            "referenceNo",
+            "refNo",
+            "origReferenceNo",
+            "origRefNo"
+        );
+        if (reference != null) {
+            normalized.put("originalReferenceNumber", reference);
+        }
+
+        String authCode = firstNonEmpty(
+            payload,
+            "originalAuthorizationCode",
+            "authorizationCode",
+            "authCode",
+            "origAuthCode"
+        );
+        if (authCode != null) {
+            normalized.put("originalAuthorizationCode", authCode);
+            putIfMissing(payload, "authorizationCode", authCode);
+            if (payload.has("authorizationCode")) {
+                normalized.put("authorizationCode", payload.get("authorizationCode"));
+            }
+        }
+
+        if (payload.has("cardNumber")) {
+            normalized.put("cardNumber", payload.get("cardNumber"));
+        }
+        if (payload.has("expiryDate")) {
+            normalized.put("expiryDate", payload.get("expiryDate"));
+        }
+        if (payload.has("authorizationMethod")) {
+            normalized.put("authorizationMethod", payload.get("authorizationMethod"));
+        }
+
+        return normalized.toString();
     }
 
     public void adjustTips(String payloadBody, MethodChannel.Result result) {
         if (vasService == null) { result.error("NOT_BOUND", "VAS Service not bound", null); return; }
-        try { vasService.adjustTips(new VASPayload(payloadBody != null ? payloadBody : "{}"), vasListener); result.success(null); }
-        catch (RemoteException e) { result.error("REMOTE_EXCEPTION", e.getMessage(), null); }
+        try { 
+            String body = normalizeAdjustTipsPayload(payloadBody);
+            Log.d(TAG, "VAS Call: adjustTips, Payload: " + body);
+            vasService.adjustTips(createPayload(body), vasListener); 
+            result.success(null); 
+        }
+        catch (JSONException e) {
+            Log.e(TAG, "VAS Call Error: adjustTips payload", e);
+            result.error("INVALID_PAYLOAD", e.getMessage(), null);
+        }
+        catch (RemoteException e) { 
+            Log.e(TAG, "VAS Call Error: adjustTips", e);
+            result.error("REMOTE_EXCEPTION", e.getMessage(), null); 
+        }
     }
 
     @Override
