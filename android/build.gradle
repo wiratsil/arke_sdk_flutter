@@ -27,7 +27,7 @@ apply plugin: "com.android.library"
 android {
     namespace = "com.arke.sdk.arke_sdk_flutter"
 
-    compileSdk = 34
+    compileSdk = 36
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -35,7 +35,7 @@ android {
     }
 
     defaultConfig {
-        minSdk = 19
+        minSdk = 21
         consumerProguardFiles 'proguard-rules.pro'
     }
 
